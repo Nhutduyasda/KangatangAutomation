@@ -1,0 +1,19 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.vs/
+.vscode/
+*.DotSettings.user
+
+## NuGet
+packages/
+*.nupkg
+
+## Test Results
+TestResults/
+
+## OS
+.DS_Store
+Thumbs.db
