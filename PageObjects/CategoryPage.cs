@@ -13,10 +13,14 @@ public class CategoryPage
     // ===== Locators =====
     private static readonly By DashboardMenu = By.CssSelector("li:nth-child(1) p:nth-child(2)");
     private static readonly By CategoriesMenu = By.CssSelector("li:nth-child(4) p");
-    private static readonly By AddNewButton = By.CssSelector(".btn-add-category");
+    
+    // Updated locator for Add New button to be more flexible (checking class, href, text)
+    private static readonly By AddNewButton = By.CssSelector("a[href*='category/create'], .btn-add-category, a.btn-primary, button.btn-primary");
+    private static readonly By AddNewButtonXPath = By.XPath("//a[contains(text(), 'Add') or contains(text(), 'Thêm') or contains(@class, 'add-category')]");
+    
     private static readonly By SupplierDropdown = By.Id("supplierId");
     private static readonly By CategoryNameInput = By.Id("categoryName");
-    private static readonly By SaveButton = By.CssSelector(".btn-save");
+    private static readonly By SaveButton = By.CssSelector(".btn-save, button[type='submit']");
 
     public CategoryPage(IWebDriver driver)
     {
@@ -29,6 +33,7 @@ public class CategoryPage
         _wait.Until(d => d.FindElement(DashboardMenu).Displayed);
         _driver.FindElement(DashboardMenu).Click();
         GenReport.LogPass("Dashboard menu clicked");
+        Thread.Sleep(500); // Wait for transition
         return this;
     }
 
@@ -37,14 +42,37 @@ public class CategoryPage
         _wait.Until(d => d.FindElement(CategoriesMenu).Displayed);
         _driver.FindElement(CategoriesMenu).Click();
         GenReport.LogPass("Categories menu opened");
+        Thread.Sleep(1000); // Wait for table/page to load completely
         return this;
     }
 
     public CategoryPage ClickAddNew()
     {
-        _wait.Until(d => d.FindElement(AddNewButton).Displayed);
-        _driver.FindElement(AddNewButton).Click();
-        GenReport.LogPass("Add New button clicked");
+        // Try multiple locators just in case the UI is different from the excel file
+        IWebElement? button = null;
+        try
+        {
+            button = _wait.Until(d => d.FindElement(AddNewButton));
+        }
+        catch
+        {
+            try 
+            {
+                button = _driver.FindElement(AddNewButtonXPath);
+            }
+            catch (Exception ex)
+            {
+                GenReport.LogFail($"Could not find Add New button. Error: {ex.Message}");
+                throw;
+            }
+        }
+
+        if (button != null)
+        {
+            button.Click();
+            GenReport.LogPass("Add New button clicked");
+            Thread.Sleep(1000); // Wait for the form to appear
+        }
         return this;
     }
 
@@ -62,8 +90,10 @@ public class CategoryPage
     {
         var dropdown = _driver.FindElement(SupplierDropdown);
         dropdown.Click();
+        Thread.Sleep(300);
         var option = dropdown.FindElement(By.CssSelector($"option[value='{value}']"));
         option.Click();
+        Thread.Sleep(300);
         GenReport.LogPass($"Supplier selected: value={value}");
         return this;
     }
@@ -103,6 +133,7 @@ public class CategoryPage
     {
         _driver.FindElement(SaveButton).Click();
         GenReport.LogPass("Save button clicked");
+        Thread.Sleep(2000); // Wait for response
         return this;
     }
 
