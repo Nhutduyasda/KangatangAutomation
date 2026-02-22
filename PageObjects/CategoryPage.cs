@@ -16,17 +16,17 @@ public class CategoryPage
     private static readonly By DashboardMenu = By.XPath("//p[contains(text(), 'SẢN PHẨM & CUNG ỨNG') or contains(text(), 'Dashboard')]");
     
     // Nút "THÊM DANH MỤC" trên menu bên trái
-    private static readonly By CategoriesMenu = By.XPath("//p[contains(text(), 'THÊM DANH MỤC')] | //a[contains(@href, 'addcategory')]");
+    private static readonly By CategoriesMenu = By.XPath("//p[contains(text(), 'Thêm Danh Mục')] | //a[contains(@href, 'addcategory')]");
     
     // Trên form thêm danh mục:
-    private static readonly By SupplierDropdown = By.Id("supplierId"); 
+    private static readonly By SupplierDropdown = By.Id("supplier.id"); 
     // Hoặc theo name="supplierId" / By.XPath("//select[contains(@name, 'supplier')]") nếu ID đổi
     
-    private static readonly By CategoryNameInput = By.Id("categoryName"); 
+    private static readonly By CategoryNameInput = By.Id("name"); 
     // Hoặc By.Name("categoryName")
 
     // Nút "Add Category" màu xanh dương nhạt
-    private static readonly By SaveButton = By.XPath("//button[contains(text(), 'Add Category')] | //input[@value='Add Category']");
+    private static readonly By SaveButton = By.XPath("//button[@type='submit']");
 
     public CategoryPage(IWebDriver driver)
     {
