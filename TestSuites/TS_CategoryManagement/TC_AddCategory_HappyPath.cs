@@ -130,7 +130,14 @@ public class TC_AddCategory_HappyPath
 
         GenReport.SetTestResult(status, message);
         GenReport.LogInfo("[TEARDOWN] Closing browser");
-        DriverManager.QuitDriver(_driver);
+        
+        // Fix NUnit1032: Dispose _driver directly
+        if (_driver != null)
+        {
+            _driver.Quit();
+            _driver.Dispose();
+            _driver = null;
+        }
     }
 
     [OneTimeTearDown]
