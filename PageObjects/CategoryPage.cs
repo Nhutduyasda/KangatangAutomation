@@ -11,16 +11,22 @@ public class CategoryPage
     private readonly WebDriverWait _wait;
 
     // ===== Locators =====
-    private static readonly By DashboardMenu = By.CssSelector("li:nth-child(1) p:nth-child(2)");
-    private static readonly By CategoriesMenu = By.CssSelector("li:nth-child(4) p");
+    // Dựa vào ảnh, menu nằm bên trái có chữ "THÊM DANH MỤC" (có icon hình người/avatar).
+    // Ta lấy theo text hoặc href vì cấu trúc menu có vẻ khác so với file xls ban đầu.
+    private static readonly By DashboardMenu = By.XPath("//p[contains(text(), 'SẢN PHẨM & CUNG ỨNG') or contains(text(), 'Dashboard')]");
     
-    // Updated locator for Add New button to be more flexible (checking class, href, text)
-    private static readonly By AddNewButton = By.CssSelector("a[href*='category/create'], .btn-add-category, a.btn-primary, button.btn-primary");
-    private static readonly By AddNewButtonXPath = By.XPath("//a[contains(text(), 'Add') or contains(text(), 'Thêm') or contains(@class, 'add-category')]");
+    // Nút "THÊM DANH MỤC" trên menu bên trái
+    private static readonly By CategoriesMenu = By.XPath("//p[contains(text(), 'THÊM DANH MỤC')] | //a[contains(@href, 'addcategory')]");
     
-    private static readonly By SupplierDropdown = By.Id("supplierId");
-    private static readonly By CategoryNameInput = By.Id("categoryName");
-    private static readonly By SaveButton = By.CssSelector(".btn-save, button[type='submit']");
+    // Trên form thêm danh mục:
+    private static readonly By SupplierDropdown = By.Id("supplierId"); 
+    // Hoặc theo name="supplierId" / By.XPath("//select[contains(@name, 'supplier')]") nếu ID đổi
+    
+    private static readonly By CategoryNameInput = By.Id("categoryName"); 
+    // Hoặc By.Name("categoryName")
+
+    // Nút "Add Category" màu xanh dương nhạt
+    private static readonly By SaveButton = By.XPath("//button[contains(text(), 'Add Category')] | //input[@value='Add Category']");
 
     public CategoryPage(IWebDriver driver)
     {
@@ -30,10 +36,17 @@ public class CategoryPage
 
     public CategoryPage ClickDashboardMenu()
     {
-        _wait.Until(d => d.FindElement(DashboardMenu).Displayed);
-        _driver.FindElement(DashboardMenu).Click();
-        GenReport.LogPass("Dashboard menu clicked");
-        Thread.Sleep(500); // Wait for transition
+        try
+        {
+            _wait.Until(d => d.FindElement(DashboardMenu).Displayed);
+            _driver.FindElement(DashboardMenu).Click();
+            GenReport.LogPass("Dashboard menu clicked");
+            Thread.Sleep(500); // Wait for transition
+        }
+        catch 
+        {
+            GenReport.LogWarning("Dashboard menu not found or not clickable, proceeding...");
+        }
         return this;
     }
 
@@ -41,46 +54,22 @@ public class CategoryPage
     {
         _wait.Until(d => d.FindElement(CategoriesMenu).Displayed);
         _driver.FindElement(CategoriesMenu).Click();
-        GenReport.LogPass("Categories menu opened");
-        Thread.Sleep(1000); // Wait for table/page to load completely
+        GenReport.LogPass("Menu 'THÊM DANH MỤC' clicked");
+        Thread.Sleep(1000); // Wait for page to load completely
         return this;
     }
 
+    // Không còn nút "Add New" nữa vì menu "THÊM DANH MỤC" chuyển trực tiếp vào form
     public CategoryPage ClickAddNew()
     {
-        // Try multiple locators just in case the UI is different from the excel file
-        IWebElement? button = null;
-        try
-        {
-            button = _wait.Until(d => d.FindElement(AddNewButton));
-        }
-        catch
-        {
-            try 
-            {
-                button = _driver.FindElement(AddNewButtonXPath);
-            }
-            catch (Exception ex)
-            {
-                GenReport.LogFail($"Could not find Add New button. Error: {ex.Message}");
-                throw;
-            }
-        }
-
-        if (button != null)
-        {
-            button.Click();
-            GenReport.LogPass("Add New button clicked");
-            Thread.Sleep(1000); // Wait for the form to appear
-        }
+        // Bỏ qua hành động này vì flow mới vào thẳng form
         return this;
     }
 
     public CategoryPage NavigateToCategoryPage()
     {
-        ClickDashboardMenu();
+        // Có thể cần click menu cha nếu nó bị ẩn, nhưng tạm thời cứ click trực tiếp
         ClickCategoriesMenu();
-        ClickAddNew();
         _wait.Until(d => d.FindElement(CategoryNameInput).Displayed);
         GenReport.LogPass("Navigated to Add Category page");
         return this;
@@ -132,7 +121,7 @@ public class CategoryPage
     public CategoryPage ClickSave()
     {
         _driver.FindElement(SaveButton).Click();
-        GenReport.LogPass("Save button clicked");
+        GenReport.LogPass("Add Category button clicked");
         Thread.Sleep(2000); // Wait for response
         return this;
     }
@@ -142,7 +131,7 @@ public class CategoryPage
     {
         try
         {
-            _wait.Until(d => d.Url.Contains("categor"));
+            _wait.Until(d => d.Url.Contains("categor")); // Adjust if URL differs upon success
             return true;
         }
         catch { return false; }
