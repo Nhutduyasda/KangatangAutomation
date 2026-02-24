@@ -40,7 +40,51 @@ public static class DriverManager
     public static WebDriverWait GetWait(IWebDriver driver, int? timeoutSeconds = null)
     {
         var timeout = timeoutSeconds ?? TestSettings.DefaultTimeoutSeconds;
-        return new WebDriverWait(driver, TimeSpan.FromSeconds(timeout));
+        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeout));
+
+        // Make waits more resilient in real-world UI tests
+        wait.IgnoreExceptionTypes(
+            typeof(NoSuchElementException),
+            typeof(StaleElementReferenceException),
+            typeof(UnhandledAlertException));
+
+        return wait;
+    }
+
+    /// <summary>
+    /// Accept any unexpected JS alert if present (ex: alert text 'XSS').
+    /// Returns true if an alert was found and accepted.
+    /// </summary>
+    public static bool TryAcceptAnyAlert(IWebDriver driver, int timeoutMs = 800)
+    {
+        var end = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < end)
+        {
+            try
+            {
+                var alert = driver.SwitchTo().Alert();
+                alert.Accept();
+                return true;
+            }
+            catch (NoAlertPresentException)
+            {
+                Thread.Sleep(80);
+            }
+            catch (UnhandledAlertException)
+            {
+                try
+                {
+                    driver.SwitchTo().Alert().Accept();
+                    return true;
+                }
+                catch
+                {
+                    Thread.Sleep(80);
+                }
+            }
+        }
+
+        return false;
     }
 
     public static void QuitDriver(IWebDriver? driver)

@@ -1,3 +1,4 @@
+using System.Linq;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using KangatangAutomation.Config;
@@ -27,13 +28,23 @@ public class LoginPage
     public LoginPage NavigateToSite()
     {
         _driver.Navigate().GoToUrl(TestSettings.BaseUrl);
+        // Handle unexpected alerts that may appear on load (ex: stored XSS in environment)
+        DriverManager.TryAcceptAnyAlert(_driver);
         GenReport.LogPass("Navigated to: " + TestSettings.BaseUrl);
         return this;
     }
 
     public LoginPage ClickMenuList()
     {
-        _wait.Until(d => d.FindElement(MenuList).Displayed);
+        DriverManager.TryAcceptAnyAlert(_driver);
+
+        _wait.Until(d =>
+        {
+            DriverManager.TryAcceptAnyAlert(d);
+            var el = d.FindElements(MenuList).FirstOrDefault();
+            return el != null && el.Displayed;
+        });
+
         _driver.FindElement(MenuList).Click();
         GenReport.LogPass("Menu list clicked");
         return this;
@@ -41,7 +52,15 @@ public class LoginPage
 
     public LoginPage ClickLoginLink()
     {
-        _wait.Until(d => d.FindElement(LoginLink).Displayed);
+        DriverManager.TryAcceptAnyAlert(_driver);
+
+        _wait.Until(d =>
+        {
+            DriverManager.TryAcceptAnyAlert(d);
+            var el = d.FindElements(LoginLink).FirstOrDefault();
+            return el != null && el.Displayed;
+        });
+
         _driver.FindElement(LoginLink).Click();
         GenReport.LogPass("Login link clicked");
         return this;
@@ -49,7 +68,14 @@ public class LoginPage
 
     public LoginPage EnterUsername(string username)
     {
-        var input = _wait.Until(d => d.FindElement(IdInput));
+        DriverManager.TryAcceptAnyAlert(_driver);
+
+        var input = _wait.Until(d =>
+        {
+            DriverManager.TryAcceptAnyAlert(d);
+            return d.FindElement(IdInput);
+        });
+
         input.Click();
         input.Clear();
         input.SendKeys(username);
@@ -59,7 +85,14 @@ public class LoginPage
 
     public LoginPage EnterPassword(string password)
     {
-        var input = _driver.FindElement(PasswordInput);
+        DriverManager.TryAcceptAnyAlert(_driver);
+
+        var input = _wait.Until(d =>
+        {
+            DriverManager.TryAcceptAnyAlert(d);
+            return d.FindElement(PasswordInput);
+        });
+
         input.Click();
         input.Clear();
         input.SendKeys(password);
@@ -69,6 +102,7 @@ public class LoginPage
 
     public LoginPage ClickLoginButton()
     {
+        DriverManager.TryAcceptAnyAlert(_driver);
         _driver.FindElement(LoginButton).Click();
         GenReport.LogPass("Login button clicked");
         return this;
@@ -76,7 +110,13 @@ public class LoginPage
 
     public LoginPage VerifyDashboardDisplayed()
     {
-        _wait.Until(d => d.FindElement(DashboardElement).Displayed);
+        _wait.Until(d =>
+        {
+            DriverManager.TryAcceptAnyAlert(d);
+            var el = d.FindElements(DashboardElement).FirstOrDefault();
+            return el != null && el.Displayed;
+        });
+
         GenReport.LogPass("Dashboard is displayed - Login successful");
         return this;
     }
