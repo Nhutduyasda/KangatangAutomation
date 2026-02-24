@@ -1,3 +1,4 @@
+using System.Threading;
 using AventStack.ExtentReports;
 using AventStack.ExtentReports.Reporter;
 using KangatangAutomation.Config;
@@ -7,7 +8,10 @@ namespace KangatangAutomation.Helpers;
 public static class GenReport
 {
     private static ExtentReports? _extent;
-    private static ExtentTest? _currentTest;
+
+    // Per-thread test context to prevent overwriting _currentTest when tests run in parallel.
+    private static readonly AsyncLocal<ExtentTest?> _currentTest = new();
+
     private static readonly object _lock = new object();
     private static string? _currentSuiteName;
 
@@ -42,21 +46,29 @@ public static class GenReport
                 _extent.AddSystemInfo("Base URL", TestSettings.BaseUrl);
                 _extent.AddSystemInfo("Execution Time", DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
             }
+
             return _extent;
         }
     }
 
     public static ExtentTest CreateTest(string testName, string description = "")
     {
-        _currentTest = _extent!.CreateTest(testName, description);
-        _currentTest.Info($"Test started at: {DateTime.Now:HH:mm:ss}");
-        return _currentTest;
+        // Safety: ensure extent exists even if GetInstance wasn't called.
+        if (_extent == null)
+            GetInstance(_currentSuiteName ?? "TestSuite");
+
+        var t = _extent!.CreateTest(testName, description);
+        t.Info($"Test started at: {DateTime.Now:HH:mm:ss}");
+        _currentTest.Value = t;
+        return t;
     }
+
+    private static ExtentTest? CurrentTest => _currentTest.Value;
 
     public static void LogStep(string stepDescription, Status status = Status.Info)
     {
         var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
-        _currentTest?.Log(status, $"[{timestamp}] {stepDescription}");
+        CurrentTest?.Log(status, $"[{timestamp}] {stepDescription}");
     }
 
     public static void LogPass(string message) => LogStep(message, Status.Pass);
@@ -70,11 +82,11 @@ public static class GenReport
         {
             var screenshot = ((OpenQA.Selenium.ITakesScreenshot)driver).GetScreenshot();
             var base64 = screenshot.AsBase64EncodedString;
-            _currentTest?.Info(title, MediaEntityBuilder.CreateScreenCaptureFromBase64String(base64).Build());
+            CurrentTest?.Info(title, MediaEntityBuilder.CreateScreenCaptureFromBase64String(base64).Build());
         }
         catch (Exception ex)
         {
-            _currentTest?.Warning($"Could not capture screenshot: {ex.Message}");
+            CurrentTest?.Warning($"Could not capture screenshot: {ex.Message}");
         }
     }
 
@@ -84,16 +96,16 @@ public static class GenReport
         switch (status)
         {
             case NUnit.Framework.Interfaces.TestStatus.Passed:
-                _currentTest?.Pass($"Test completed successfully at: {endTime}");
+                CurrentTest?.Pass($"Test completed successfully at: {endTime}");
                 break;
             case NUnit.Framework.Interfaces.TestStatus.Failed:
-                _currentTest?.Fail($"Test failed at: {endTime}. Error: {message}");
+                CurrentTest?.Fail($"Test failed at: {endTime}. Error: {message}");
                 break;
             case NUnit.Framework.Interfaces.TestStatus.Skipped:
-                _currentTest?.Skip($"Test skipped at: {endTime}. Reason: {message}");
+                CurrentTest?.Skip($"Test skipped at: {endTime}. Reason: {message}");
                 break;
             default:
-                _currentTest?.Warning($"Test ended with unknown status at: {endTime}");
+                CurrentTest?.Warning($"Test ended with unknown status at: {endTime}");
                 break;
         }
     }
@@ -103,7 +115,7 @@ public static class GenReport
     public static void Reset()
     {
         _extent = null;
-        _currentTest = null;
+        _currentTest.Value = null;
         _currentSuiteName = null;
     }
 }
