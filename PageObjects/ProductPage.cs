@@ -1,5 +1,6 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
+using OpenQA.Selenium.Support.Extensions;
 using KangatangAutomation.Config;
 using KangatangAutomation.Helpers;
 
@@ -11,23 +12,23 @@ public class ProductPage
     private readonly WebDriverWait _wait;
 
     // ===== Locators =====
-    private static readonly By DashboardMenu = By.CssSelector("li:nth-child(1) p:nth-child(2)");
-    private static readonly By ProductsMenu = By.CssSelector("li:nth-child(5) p");
-    private static readonly By NameInput = By.Id("name");
-    private static readonly By UnitPriceInput = By.Id("unitPrice");
-    private static readonly By DiscountInput = By.Id("discount");
-    private static readonly By QuantityInput = By.Id("quantity");
+    private static readonly By DashboardMenu    = By.CssSelector("li:nth-child(1) p:nth-child(2)");
+    private static readonly By ProductsMenu     = By.CssSelector("li:nth-child(5) p");
+    private static readonly By NameInput        = By.Id("name");
+    private static readonly By UnitPriceInput   = By.Id("unitPrice");
+    private static readonly By DiscountInput    = By.Id("discount");
+    private static readonly By QuantityInput    = By.Id("quantity");
     private static readonly By ProductDateInput = By.Id("productDate");
     private static readonly By SupplierDropdown = By.Id("supplier.id");
     private static readonly By CategoryDropdown = By.Id("category.id");
-    private static readonly By FileUpload = By.Id("files");
+    private static readonly By FileUpload       = By.Id("files");
     private static readonly By DescriptionInput = By.Id("description");
-    private static readonly By SubmitButton = By.CssSelector(".btn-info");
+    private static readonly By SubmitButton     = By.CssSelector(".btn-info");
 
     public ProductPage(IWebDriver driver)
     {
         _driver = driver;
-        _wait = DriverManager.GetWait(driver);
+        _wait   = DriverManager.GetWait(driver);
     }
 
     public ProductPage ClickDashboardMenu()
@@ -108,19 +109,37 @@ public class ProductPage
 
     public ProductPage SelectSupplier(string value)
     {
-        var dropdown = _driver.FindElement(SupplierDropdown);
-        var option = dropdown.FindElement(By.CssSelector($"option[value='{value}']"));
-        option.Click();
+        // Chờ dropdown Supplier có ít nhất 2 option (tức là đã load xong dữ liệu)
+        _wait.Until(d =>
+        {
+            var el = d.FindElement(SupplierDropdown);
+            return el.FindElements(By.TagName("option")).Count > 1;
+        });
+
+        var select = new SelectElement(_driver.FindElement(SupplierDropdown));
+        select.SelectByValue(value);
         GenReport.LogPass($"Supplier selected: value={value}");
         return this;
     }
 
     public ProductPage SelectCategory(string value)
     {
-        var dropdown = _driver.FindElement(CategoryDropdown);
-        dropdown.Click();
-        var option = dropdown.FindElement(By.CssSelector($"option[value='{value}']"));
-        option.Click();
+        // Chờ dropdown Category có ít nhất 2 option
+        // (vì Category thường load động sau khi Supplier được chọn)
+        _wait.Until(d =>
+        {
+            var el = d.FindElement(CategoryDropdown);
+            return el.FindElements(By.TagName("option")).Count > 1;
+        });
+
+        // Chờ thêm cho option cụ thể xuất hiện
+        _wait.Until(d =>
+            d.FindElement(CategoryDropdown)
+             .FindElements(By.CssSelector($"option[value='{value}']")).Count > 0
+        );
+
+        var select = new SelectElement(_driver.FindElement(CategoryDropdown));
+        select.SelectByValue(value);
         GenReport.LogPass($"Category selected: value={value}");
         return this;
     }
