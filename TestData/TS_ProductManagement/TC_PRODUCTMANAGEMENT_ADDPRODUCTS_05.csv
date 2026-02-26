@@ -1,0 +1,2 @@
+productName,unitPrice,discount,quantity,productDate,supplierValue,categoryValue,imageFile,description
+Test Invalid Image,2000,,,,,,,invalid_format.txt,
