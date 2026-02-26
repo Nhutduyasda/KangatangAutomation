@@ -107,40 +107,47 @@ public class ProductPage
         return this;
     }
 
-    public ProductPage SelectSupplier(string value)
+    public ProductPage SelectSupplier(string text)
     {
-        // Chờ dropdown Supplier có ít nhất 2 option (tức là đã load xong dữ liệu)
+        // Chờ dropdown Supplier có ít nhất 2 option (đã load xong dữ liệu)
         _wait.Until(d =>
         {
             var el = d.FindElement(SupplierDropdown);
             return el.FindElements(By.TagName("option")).Count > 1;
         });
 
+        // Chờ option với text cụ thể xuất hiện
+        _wait.Until(d =>
+            d.FindElement(SupplierDropdown)
+             .FindElements(By.TagName("option"))
+             .Any(o => o.Text.Trim() == text)
+        );
+
         var select = new SelectElement(_driver.FindElement(SupplierDropdown));
-        select.SelectByValue(value);
-        GenReport.LogPass($"Supplier selected: value={value}");
+        select.SelectByText(text);
+        GenReport.LogPass($"Supplier selected: text={text}");
         return this;
     }
 
-    public ProductPage SelectCategory(string value)
+    public ProductPage SelectCategory(string text)
     {
         // Chờ dropdown Category có ít nhất 2 option
-        // (vì Category thường load động sau khi Supplier được chọn)
         _wait.Until(d =>
         {
             var el = d.FindElement(CategoryDropdown);
             return el.FindElements(By.TagName("option")).Count > 1;
         });
 
-        // Chờ thêm cho option cụ thể xuất hiện
+        // Chờ option với text cụ thể xuất hiện
         _wait.Until(d =>
             d.FindElement(CategoryDropdown)
-             .FindElements(By.CssSelector($"option[value='{value}']")).Count > 0
+             .FindElements(By.TagName("option"))
+             .Any(o => o.Text.Trim() == text)
         );
 
         var select = new SelectElement(_driver.FindElement(CategoryDropdown));
-        select.SelectByValue(value);
-        GenReport.LogPass($"Category selected: value={value}");
+        select.SelectByText(text);
+        GenReport.LogPass($"Category selected: text={text}");
         return this;
     }
 
@@ -181,16 +188,16 @@ public class ProductPage
     /// </summary>
     public ProductPage FillAndSubmitProduct(
         string name, string unitPrice, string discount,
-        string quantity, string date, string supplierValue,
-        string categoryValue, string imageFile, string description)
+        string quantity, string date, string supplierText,
+        string categoryText, string imageFile, string description)
     {
         EnterProductName(name);
         EnterUnitPrice(unitPrice);
         EnterDiscount(discount);
         EnterQuantity(quantity);
         EnterProductDate(date);
-        SelectSupplier(supplierValue);
-        SelectCategory(categoryValue);
+        SelectSupplier(supplierText);
+        SelectCategory(categoryText);
         UploadImage(imageFile);
         EnterDescription(description);
         ClickSubmit();
