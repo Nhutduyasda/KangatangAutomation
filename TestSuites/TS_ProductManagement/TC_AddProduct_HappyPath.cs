@@ -3,6 +3,8 @@ using OpenQA.Selenium.Support.UI;
 using KangatangAutomation.Config;
 using KangatangAutomation.Helpers;
 using KangatangAutomation.PageObjects;
+using KangatangAutomation.Models;
+using System.Collections.Generic;
 
 namespace KangatangAutomation.TestSuites.TS_ProductManagement;
 
@@ -41,8 +43,14 @@ public class TC_AddProduct_HappyPath
         GenReport.LogPass("[SETUP] ChromeDriver initialized successfully");
     }
 
-    [Test, Order(1)]
-    public void AddProduct_WithValidData_ShouldRedirectToProductList()
+    public static IEnumerable<TestCaseData> GetProductData()
+    {
+        return CSVReaderHelper.ReadCsvData<ProductModel>("ProductData.csv");
+    }
+
+    [TestCaseSource(nameof(GetProductData))]
+    [Order(1)]
+    public void AddProduct_WithValidData_ShouldRedirectToProductList(ProductModel product)
     {
         // ── STEP 1-8: Login ──────────────────────────────────────────
         GenReport.LogInfo("[STEP 1-8] Navigating to site and logging in");
@@ -53,40 +61,40 @@ public class TC_AddProduct_HappyPath
         _productPage!.NavigateToProductPage();
 
         // ── STEP 11-12: Enter Product Name ───────────────────────────
-        GenReport.LogInfo("[STEP 11-12] Entering product name: Cà Phê Sữa Đá");
-        _productPage.EnterProductName("Cà Phê Sữa Đá");
+        GenReport.LogInfo($"[STEP 11-12] Entering product name: {product.ProductName}");
+        _productPage.EnterProductName(product.ProductName!);
 
         // ── STEP 13-14: Enter Unit Price ─────────────────────────────
-        GenReport.LogInfo("[STEP 13-14] Entering unit price: 1000");
-        _productPage.EnterUnitPrice("1000");
+        GenReport.LogInfo($"[STEP 13-14] Entering unit price: {product.UnitPrice}");
+        _productPage.EnterUnitPrice(product.UnitPrice!);
 
         // ── STEP 15-16: Enter Discount ───────────────────────────────
-        GenReport.LogInfo("[STEP 15-16] Entering discount: 10");
-        _productPage.EnterDiscount("10");
+        GenReport.LogInfo($"[STEP 15-16] Entering discount: {product.Discount}");
+        _productPage.EnterDiscount(product.Discount!);
 
         // ── STEP 17-18: Enter Quantity ───────────────────────────────
-        GenReport.LogInfo("[STEP 17-18] Entering quantity: 100");
-        _productPage.EnterQuantity("100");
+        GenReport.LogInfo($"[STEP 17-18] Entering quantity: {product.Quantity}");
+        _productPage.EnterQuantity(product.Quantity!);
 
         // ── STEP 19-21: Enter Product Date ───────────────────────────
-        GenReport.LogInfo("[STEP 19-21] Entering product date: 02/20/2026");
-        _productPage.EnterProductDate("02/20/2026");
+        GenReport.LogInfo($"[STEP 19-21] Entering product date: {product.ProductDate}");
+        _productPage.EnterProductDate(product.ProductDate!);
 
         // ── STEP 22: Select Supplier ─────────────────────────────────
-        GenReport.LogInfo("[STEP 22] Selecting supplier (value=33)");
-        _productPage.SelectSupplier("33");
+        GenReport.LogInfo($"[STEP 22] Selecting supplier (value={product.SupplierValue})");
+        _productPage.SelectSupplier(product.SupplierValue!);
 
         // ── STEP 23-24: Select Category ──────────────────────────────
-        GenReport.LogInfo("[STEP 23-24] Selecting category (value=34)");
-        _productPage.SelectCategory("34");
+        GenReport.LogInfo($"[STEP 23-24] Selecting category (value={product.CategoryValue})");
+        _productPage.SelectCategory(product.CategoryValue!);
 
         // ── STEP 25-26: Upload Image ──────────────────────────────────
-        GenReport.LogInfo("[STEP 25-26] Uploading product image: CafeDa.png");
-        _productPage.UploadImage("CafeDa.png");
+        GenReport.LogInfo($"[STEP 25-26] Uploading product image: {product.ImageName}");
+        _productPage.UploadImage(product.ImageName!);
 
         // ── STEP 27-28: Enter Description ────────────────────────────
-        GenReport.LogInfo("[STEP 27-28] Entering description: Cà phê sữa đá thơm ngon");
-        _productPage.EnterDescription("Cà phê sữa đá thơm ngon");
+        GenReport.LogInfo($"[STEP 27-28] Entering description: {product.Description}");
+        _productPage.EnterDescription(product.Description!);
 
         // ── STEP 29: Click Submit ─────────────────────────────────────
         GenReport.LogInfo("[STEP 29] Clicking Submit (Add Product) button");
